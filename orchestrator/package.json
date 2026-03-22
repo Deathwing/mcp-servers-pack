@@ -1,0 +1,26 @@
+{
+  "name": "agent-orchestrator",
+  "version": "2.0.0",
+  "description": "File locking, messaging, task board, and MCP server for parallel AI agent orchestration",
+  "author": "Deathwing",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Deathwing/mcp-servers-pack"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "orch": "tsx src/cli.ts",
+    "mcp": "tsx src/mcp-server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3"
+  }
+}
