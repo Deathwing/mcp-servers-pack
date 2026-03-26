@@ -6,8 +6,37 @@
  * Includes auto-reconnect with exponential backoff and heartbeat pings.
  */
 
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
 import * as net from "node:net";
+import * as os from "node:os";
+import * as path from "node:path";
 import { EventEmitter } from "node:events";
+
+/**
+ * Derive the port-file path for a given Unity project directory.
+ * Uses the same 8-char MD5 hash of the project path as the C# side.
+ * Falls back to the generic "unity-mcp.port" when no project path is known.
+ */
+function portFilePath(projectPath?: string): string {
+	if (projectPath) {
+		const hash = crypto.createHash("md5").update(projectPath).digest("hex").slice(0, 8);
+		return path.join(os.tmpdir(), `unity-mcp.${hash}.port`);
+	}
+	return path.join(os.tmpdir(), "unity-mcp.port");
+}
+
+/** Read the port Unity is listening on from the shared temp file, or return undefined. */
+function readPortFile(projectPath?: string): number | undefined {
+	try {
+		const raw = fs.readFileSync(portFilePath(projectPath), "utf-8").trim();
+		const n = Number(raw);
+		if (Number.isInteger(n) && n > 0 && n < 65536) return n;
+	} catch {
+		// file absent — Unity not running or hasn't written it yet
+	}
+	return undefined;
+}
 
 interface PendingRequest {
 	resolve: (value: unknown) => void;
@@ -18,6 +47,13 @@ interface PendingRequest {
 export interface UnityBridgeOptions {
 	host?: string;
 	port?: number;
+	/**
+	 * Absolute path to the Unity project root directory.
+	 * When set, the bridge reads from the project-specific port file
+	 * (unity-mcp.{hash}.port) so multiple Unity instances can run in parallel.
+	 * Defaults to the UNITY_PROJECT_PATH environment variable.
+	 */
+	projectPath?: string;
 	/** Request timeout in ms (default: 30s) */
 	requestTimeout?: number;
 	/** Heartbeat interval in ms (default: 10s) */
@@ -39,6 +75,7 @@ export class UnityBridge extends EventEmitter {
 
 	private readonly host: string;
 	private readonly port: number;
+	private readonly projectPath: string | undefined;
 	private readonly requestTimeout: number;
 	private readonly heartbeatInterval: number;
 	private readonly maxReconnectDelay: number;
@@ -47,6 +84,7 @@ export class UnityBridge extends EventEmitter {
 		super();
 		this.host = options.host ?? "127.0.0.1";
 		this.port = options.port ?? 52719;
+		this.projectPath = options.projectPath ?? process.env.UNITY_PROJECT_PATH;
 		this.requestTimeout = options.requestTimeout ?? 30_000;
 		this.heartbeatInterval = options.heartbeatInterval ?? 10_000;
 		this.maxReconnectDelay = options.maxReconnectDelay ?? 30_000;
@@ -85,6 +123,10 @@ export class UnityBridge extends EventEmitter {
 	private attemptConnect(): void {
 		if (this.destroyed) return;
 
+		// Prefer the port Unity advertises via the temp file (handles port fallback).
+		const discoveredPort = readPortFile(this.projectPath);
+		const connectPort = discoveredPort ?? this.port;
+
 		const socket = new net.Socket();
 		socket.setEncoding("utf-8");
 		socket.setKeepAlive(true, 5000);
@@ -96,7 +138,7 @@ export class UnityBridge extends EventEmitter {
 			this.buffer = "";
 			this.startHeartbeat();
 			this.emit("connected");
-			this.log("Connected to Unity");
+			this.log(`Connected to Unity on port ${connectPort}`);
 		});
 
 		socket.on("data", (data: string) => {
@@ -118,7 +160,7 @@ export class UnityBridge extends EventEmitter {
 			}
 		});
 
-		socket.connect(this.port, this.host);
+		socket.connect(connectPort, this.host);
 	}
 
 	private handleDisconnect(reason: string): void {

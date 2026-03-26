@@ -68,29 +68,63 @@ namespace UnityMCP
             }
         }
 
+        // Shared temp-file path so the TypeScript bridge can discover the active port.
+        // The filename includes an 8-char MD5 hash of the project path so multiple
+        // simultaneous Unity instances each get their own file.
+        private static string PortFilePath
+        {
+            get
+            {
+                var projectPath = System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath);
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                var hashBytes = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(projectPath ?? string.Empty));
+                var hash = BitConverter.ToString(hashBytes, 0, 4).Replace("-", "").ToLowerInvariant();
+                return System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"unity-mcp.{hash}.port");
+            }
+        }
+
         public static void Start()
         {
             if (_running) return;
 
-            int port = DefaultPort;
+            int startPort = DefaultPort;
             var envPort = Environment.GetEnvironmentVariable("UNITY_MCP_PORT");
             if (!string.IsNullOrEmpty(envPort) && int.TryParse(envPort, out int p))
-                port = p;
+                startPort = p;
 
-            try
+            // Try up to 10 consecutive ports in case the preferred one is reserved.
+            const int maxAttempts = 10;
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
-                _cts = new CancellationTokenSource();
-                _listener = new TcpListener(IPAddress.Loopback, port);
-                _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _listener.Start();
-                _running = true;
-                ActivePort = port;
-                Debug.Log($"{Tag} Listening on 127.0.0.1:{port}");
-                _ = AcceptClientsAsync(_cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"{Tag} Failed to start on port {port}: {ex.Message}");
+                int port = startPort + attempt;
+                try
+                {
+                    _cts = new CancellationTokenSource();
+                    _listener = new TcpListener(IPAddress.Loopback, port);
+                    _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    _listener.Start();
+                    _running = true;
+                    ActivePort = port;
+
+                    // Write the active port so the TypeScript bridge can discover it.
+                    try { System.IO.File.WriteAllText(PortFilePath, port.ToString()); } catch { }
+
+                    if (port != startPort)
+                        Debug.LogWarning($"{Tag} Port {startPort} unavailable, using {port} instead.");
+                    Debug.Log($"{Tag} Listening on 127.0.0.1:{port}");
+                    _ = AcceptClientsAsync(_cts.Token);
+                    return;
+                }
+                catch (SocketException ex) when (attempt < maxAttempts - 1)
+                {
+                    Debug.LogWarning($"{Tag} Port {port} failed ({ex.Message}), trying next…");
+                    _listener = null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"{Tag} Failed to start on port {port}: {ex.Message}");
+                    return;
+                }
             }
         }
 
@@ -110,6 +144,8 @@ namespace UnityMCP
                 }
                 _clients.Clear();
             }
+
+            try { System.IO.File.Delete(PortFilePath); } catch { }
 
             Debug.Log($"{Tag} Stopped");
         }
