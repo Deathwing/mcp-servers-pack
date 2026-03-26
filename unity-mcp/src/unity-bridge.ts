@@ -72,6 +72,7 @@ export class UnityBridge extends EventEmitter {
 	private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 	private connected = false;
 	private destroyed = false;
+	private activePort: number | null = null;
 
 	private readonly host: string;
 	private readonly port: number;
@@ -92,6 +93,16 @@ export class UnityBridge extends EventEmitter {
 
 	get isConnected(): boolean {
 		return this.connected;
+	}
+
+	/** The port the bridge is currently connected to, or null if not connected. */
+	get connectedPort(): number | null {
+		return this.activePort;
+	}
+
+	/** The Unity project path this bridge is scoped to, or undefined if not set. */
+	get unityProjectPath(): string | undefined {
+		return this.projectPath;
 	}
 
 	/** Connect to Unity. Returns when the first connection succeeds. */
@@ -134,6 +145,7 @@ export class UnityBridge extends EventEmitter {
 		socket.on("connect", () => {
 			this.socket = socket;
 			this.connected = true;
+			this.activePort = connectPort;
 			this.reconnectDelay = 1000;
 			this.buffer = "";
 			this.startHeartbeat();
@@ -167,6 +179,7 @@ export class UnityBridge extends EventEmitter {
 		if (!this.connected && !this.socket) return;
 		this.log(`Disconnected: ${reason}`);
 		this.connected = false;
+		this.activePort = null;
 		this.stopHeartbeat();
 		this.socket?.destroy();
 		this.socket = null;

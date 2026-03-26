@@ -232,6 +232,8 @@ async function getStatus(args: JsonObject, bridge: UnityBridge): Promise<unknown
 		unityPackageName: packageInfo.name,
 		unityPackageVersion: packageInfo.version,
 		unityPackagePath: packageInfo.packageDir,
+		...(bridge.unityProjectPath !== undefined && { connectedProject: bridge.unityProjectPath }),
+		...(bridge.connectedPort !== null && { connectedPort: bridge.connectedPort }),
 	};
 
 	// Always check Editor.log for compile errors — the bridge can be connected
