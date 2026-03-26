@@ -30,7 +30,7 @@ if errorlevel 1 (
     exit /b 1
 )
 for /f "tokens=1 delims=v" %%V in ('node -v') do set NODE_VER=%%V
-for /f "tokens=2 delims=v" %%A in ('node -v') do (
+for /f "tokens=1 delims=v" %%A in ('node -v') do (
     for /f "tokens=1 delims=." %%B in ("%%A") do set NODE_MAJOR=%%B
 )
 if !NODE_MAJOR! LSS 18 (

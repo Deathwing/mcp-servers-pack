@@ -81,6 +81,7 @@ namespace UnityMCP
             {
                 _cts = new CancellationTokenSource();
                 _listener = new TcpListener(IPAddress.Loopback, port);
+                _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _listener.Start();
                 _running = true;
                 ActivePort = port;
