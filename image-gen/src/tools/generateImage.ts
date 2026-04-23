@@ -129,7 +129,7 @@ The local provider works with stable-diffusion.cpp (sd-server), AUTOMATIC1111/Fo
 
 Best for: creating textures, UI elements, icons, sprites, illustrations, logos, backgrounds.
 
-For transparent PNGs (sprites, icons, UI overlays), use OpenAI with background "transparent".\`,
+For transparent PNGs (sprites, icons, UI overlays), use OpenAI with background "transparent".`,
 	inputSchema: InputSchema,
 
 	async execute(
