@@ -25,13 +25,13 @@ const InputSchema = z.object({
 		.enum(["openai", "gemini", "local"])
 		.default("openai")
 		.describe(
-			"Which AI provider to use. 'openai' uses gpt-image-1, 'gemini' uses Google Imagen, 'local' uses a locally running SD server (set LOCAL_SD_URL).",
+			"Which AI provider to use. 'openai' uses gpt-image-2, 'gemini' uses Google Gemini Image, 'local' uses a locally running SD server (set LOCAL_SD_URL).",
 		),
 	model: z
 		.string()
 		.optional()
 		.describe(
-			"Override the model. Defaults: openai='gpt-image-1', gemini='imagen-3.0-capability-001', local=server default.",
+			"Override the model. Defaults: openai='gpt-image-2', gemini='gemini-3-pro-image-preview', local=server default.",
 		),
 	negative_prompt: z
 		.string()
@@ -89,7 +89,7 @@ export type EditImageInput = z.infer<typeof InputSchema>;
 
 export const editImageTool = {
 	name: "edit_image",
-	description: `Edit an existing image using OpenAI gpt-image-1, Google Imagen, or a local Stable Diffusion server. Reads a source image from disk, applies the described changes, and returns the result.
+	description: `Edit an existing image using OpenAI gpt-image-2, Google Gemini Image, or a local Stable Diffusion server. Reads a source image from disk, applies the described changes, and returns the result.
 
 Set provider to "openai" (default), "gemini", or "local". Cloud providers require API keys. Local requires a running server at LOCAL_SD_URL.
 
@@ -169,7 +169,7 @@ Best for: modifying existing images — recoloring, adding effects, changing sty
 		} else {
 			if (!openai) throw new Error("OPENAI_API_KEY not configured");
 
-			const model = input.model ?? "gpt-image-1.5";
+			const model = input.model ?? "gpt-image-2";
 			const imageBuffer = await fs.readFile(absSourcePath);
 			const imageFile = await toFile(
 				imageBuffer,

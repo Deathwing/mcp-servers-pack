@@ -27,7 +27,7 @@ const InputSchema = z.object({
 		.string()
 		.optional()
 		.describe(
-			"Override the model. Defaults: openai='gpt-image-1', gemini='imagen-3.0-capability-001'.",
+			"Override the model. Defaults: openai='gpt-image-2', gemini='gemini-3-pro-image-preview', local=server default.",
 		),
 	save_to: z
 		.string()
@@ -154,7 +154,7 @@ Best for: game textures, background patterns, material surfaces that need to rep
 		} else {
 			if (!openai) throw new Error("OPENAI_API_KEY not configured");
 
-			const model = input.model ?? "gpt-image-1.5";
+			const model = input.model ?? "gpt-image-2";
 			const imageFile = await toFile(seamRegion, "seam-region.png", {
 				type: "image/png",
 			});

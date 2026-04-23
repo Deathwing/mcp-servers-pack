@@ -4,7 +4,7 @@
  * MCP Image Generation Server
  *
  * General-purpose image generation, editing, and conversion tools
- * powered by OpenAI's gpt-image-1 and Google's Imagen models.
+ * powered by OpenAI's gpt-image-2 and Google's Gemini Image models.
  *
  * Transport: stdio (launched by VS Code via mcp.json)
  * Required env: At least one of OPENAI_API_KEY or GEMINI_API_KEY

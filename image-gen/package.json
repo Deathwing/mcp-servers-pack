@@ -1,6 +1,6 @@
 {
 	"name": "image-gen-mcp",
-	"version": "4.0.0",
+	"version": "4.1.0",
 	"description": "AI image generation, editing, analysis, and processing via OpenAI, Gemini, or local Stable Diffusion",
 	"author": "Deathwing",
 	"license": "MIT",

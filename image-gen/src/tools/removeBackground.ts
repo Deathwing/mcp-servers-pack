@@ -33,7 +33,7 @@ const InputSchema = z.object({
 		.string()
 		.optional()
 		.describe(
-			"Override the model. Defaults: openai='gpt-image-1', gemini='imagen-3.0-capability-001'.",
+			"Override the model. Defaults: openai='gpt-image-2', gemini='gemini-3-pro-image-preview'.",
 		),
 	save_to: z
 		.string()
@@ -48,7 +48,7 @@ export const removeBackgroundTool = {
 	name: "remove_background",
 	description: `Remove the background from an image using AI, producing a transparent PNG.
 
-Uses the image editing API (OpenAI gpt-image-1, Gemini Imagen, or local SD server) with a background removal prompt. Best for: extracting characters, objects, icons from photos or screenshots.`,
+Uses the image editing API (OpenAI gpt-image-2, Gemini Imagen, or local SD server) with a background removal prompt. Best for: extracting characters, objects, icons from photos or screenshots.`,
 	inputSchema: InputSchema,
 
 	async execute(
